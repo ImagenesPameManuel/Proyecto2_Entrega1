@@ -37,9 +37,20 @@ def MyCCorrelation_201719942_201822262(image, kernel, boundary_condition="fill")
         fill_image=np.insert(fill_image, 0, 0, axis=0)
         fill_image=np.insert(fill_image, fill_image.shape[0], 0, axis=0)
         fill_image=np.insert(fill_image, fill_image.shape[1], 0, axis=1)
+        CCorrelation = np.zeros((len(image), len(image[0])))
         for i in range(len(image)):
             for j in range(len(image[0])):
-                CCorrelation=np.zeros((len(image),len(image[0])))
+                for filas in range(1,len(fill_image)-1):
+                    for columnas in range(1,len(fill_image[0])-1):
+                        i_fila=filas-1
+                        for multi_i in range(len(kernel)):
+                            j_column=columnas-1
+                            for multi_j in range(len(kernel[0])):
+                                #CCorrelation[i][j]+=fill_image[filas-1][columnas-1]*kernel[multi_i][multi_j]
+                                CCorrelation[i][j]+=fill_image[i_fila][j_column]*kernel[multi_i][multi_j]
+                                j_column+=1
+                            i_fila+=1
+
     elif boundary_condition=="symm":
         True
     elif boundary_condition=="valid":
@@ -49,9 +60,12 @@ def MyCCorrelation_201719942_201822262(image, kernel, boundary_condition="fill")
 rosas=io.imread("roses.jpg")
 rosas_noise=io.imread("noisy_roses.jpg")
 rosas=rgb2gray(rosas) #se le quita 3D a la imágen para convertirla en una imagen blanco-negro
-#print(rosas.shape) #print(kernel_a.shape)
+print(rosas.shape) #print(kernel_a.shape)
 #Comparaciones de resultados función creada con función propia de scipy.signal: correlate2d
-prueba_scipy=correlate2d(rosas,kernel_a)
+prueba_ka=MyCCorrelation_201719942_201822262(rosas,kernel_a)
+prueba_scipy=correlate2d(rosas,kernel_a,boundary="wrap")
+print("fin")
+print(prueba_scipy.shape)
 #io.imshow(prueba_scipy)
 ##
 a = np.array([[1, 1,1], [2, 2,2], [3, 3,3]])
