@@ -37,7 +37,7 @@ def MyCCorrelation_201719942_201822262(image, kernel, boundary_condition="fill")
         fill_image=np.insert(fill_image, 0, 0, axis=0)
         fill_image=np.insert(fill_image, fill_image.shape[0], 0, axis=0)
         fill_image=np.insert(fill_image, fill_image.shape[1], 0, axis=1)
-        CCorrelation = np.zeros((len(image)+1, len(image[0])+1))
+        CCorrelation = np.zeros((len(image)+2, len(image[0])+2))
         #print(CCorrelation.shape)
         for filas in range(1,len(fill_image)-1):
             for columnas in range(1,len(fill_image[0])-1):
@@ -52,7 +52,16 @@ def MyCCorrelation_201719942_201822262(image, kernel, boundary_condition="fill")
     elif boundary_condition=="symm":
         True
     elif boundary_condition=="valid":
-        True
+        CCorrelation=np.zeros((len(image)-2,len(image[0])-2))
+        for filas in range(1,len(image)-1):
+            for columnas in range(1,len(image[0])-1):
+                i_fila=filas-1
+                for multi_i in range(len(kernel)):
+                    j_column=columnas-1
+                    for multi_j in range(len(kernel[0])):
+                        CCorrelation[filas-1][columnas-1]+=image[i_fila][j_column]*kernel[multi_i][multi_j]
+                        j_column+=1
+                    i_fila+=1
     return CCorrelation
 
 rosas=io.imread("roses.jpg")
@@ -62,10 +71,20 @@ rosas=rgb2gray(rosas) #se le quita 3D a la imágen para convertirla en una image
 #Comparaciones de resultados función creada con función propia de scipy.signal: correlate2d
 prueba_ka=MyCCorrelation_201719942_201822262(rosas,kernel_a)
 prueba_scipy=correlate2d(rosas,kernel_a,boundary="fill")
+prueba_ka_v=MyCCorrelation_201719942_201822262(rosas,kernel_a,boundary_condition="valid")
+prueba_scipy_v=correlate2d(rosas,kernel_a,mode="valid")
 #print(prueba_scipy.shape)
+print(prueba_scipy_v.shape)
+print(prueba_ka_v.shape)
+#"""
 io.imshow(prueba_scipy)
 plt.figure()
 io.imshow(prueba_ka)
+"""
+io.imshow(prueba_scipy_v)
+plt.figure()
+io.imshow(prueba_ka_v)
+"""
 ##
 a = np.array([[1, 1,1], [2, 2,2], [3, 3,3]])
 b=np.insert(a, 0, 0, axis=1)
