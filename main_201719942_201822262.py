@@ -29,21 +29,23 @@ def gaussian_kernel(size, sigma):
     return g
 filtro_Gauss=gaussian_kernel(3,5)
 #print(filtro_Gauss)
-
 def MyCCorrelation_201719942_201822262(image, kernel, boundary_condition="fill"):
     CCorrelation=0
+    a=round((len(kernel)-1)/2)
+    b=round((len(kernel[0])-1)/2)
     if boundary_condition=="fill": #FALTA ARREGLAR
-        fill_image=np.insert(image, 0, 0, axis=1)
-        fill_image=np.insert(fill_image, 0, 0, axis=0)
-        fill_image=np.insert(fill_image, fill_image.shape[0], 0, axis=0)
-        fill_image=np.insert(fill_image, fill_image.shape[1], 0, axis=1)
-        CCorrelation = np.zeros((len(image)+2, len(image[0])+2))
+        for i in range(a):
+            fill_image=np.insert(image, 0, 0, axis=1)
+            fill_image=np.insert(fill_image, 0, 0, axis=0)
+            fill_image=np.insert(fill_image, fill_image.shape[0], 0, axis=0)
+            fill_image=np.insert(fill_image, fill_image.shape[1], 0, axis=1)
+        CCorrelation = np.zeros((len(image)+a*2, len(image[0])+b*2))
         #print(CCorrelation.shape)
-        for filas in range(1,len(fill_image)-1):
-            for columnas in range(1,len(fill_image[0])-1):
-                i_fila=filas-1
+        for filas in range(0+a,len(fill_image)-a):
+            for columnas in range(0+b,len(fill_image[0])-b):
+                i_fila=filas-a
                 for multi_i in range(len(kernel)):
-                    j_column=columnas-1
+                    j_column=columnas-b
                     for multi_j in range(len(kernel[0])):
                         #CCorrelation[i][j]+=fill_image[filas-1][columnas-1]*kernel[multi_i][multi_j]
                         CCorrelation[filas][columnas]+=fill_image[i_fila][j_column]*kernel[multi_i][multi_j]
@@ -52,18 +54,26 @@ def MyCCorrelation_201719942_201822262(image, kernel, boundary_condition="fill")
     elif boundary_condition=="symm":
         True
     elif boundary_condition=="valid":
-        CCorrelation=np.zeros((len(image)-2,len(image[0])-2))
-        for filas in range(1,len(image)-1):
-            for columnas in range(1,len(image[0])-1):
-                i_fila=filas-1
+        CCorrelation=np.zeros((len(image)-a*2,len(image[0])-b*2))
+        for filas in range(0+a,len(image)-a):
+            for columnas in range(0+b,len(image[0])-b):
+                i_fila=filas-a
                 for multi_i in range(len(kernel)):
-                    j_column=columnas-1
+                    j_column=columnas-b
                     for multi_j in range(len(kernel[0])):
-                        CCorrelation[filas-1][columnas-1]+=image[i_fila][j_column]*kernel[multi_i][multi_j]
+                        CCorrelation[filas-a][columnas-b]+=image[i_fila][j_column]*kernel[multi_i][multi_j]
                         j_column+=1
                     i_fila+=1
     return CCorrelation
-
+def error_cuadrado(imageref,imagenew):
+    suma_error=0
+    for i in range(len(imageref)):
+        for j in range(len(imageref[0])):
+            suma_error+=(imageref[i][j]-imagenew[i][j])**2
+            print(imageref[i][j],imagenew[i][j])
+    print(suma_error)
+    error=suma_error/(len(imageref)*len(imageref[0]))
+    return error
 rosas=io.imread("roses.jpg")
 rosas_noise=io.imread("noisy_roses.jpg")
 rosas=rgb2gray(rosas) #se le quita 3D a la imagen para convertirla en una imagen blanco-negro
@@ -78,21 +88,28 @@ prueba_scipy_v=correlate2d(rosas,kernel_a,mode="valid")
 print(prueba_scipy_v.shape)
 print(prueba_ka_v.shape)
 ##
+error_ka=error_cuadrado(prueba_scipy,prueba_ka)
+print(error_ka)
 io.imshow(prueba_scipy)
 plt.figure()
 io.imshow(prueba_ka)
 ##
+error_ka_v=error_cuadrado(prueba_scipy_v,prueba_ka_v)
+print(error_ka_v)
 io.imshow(prueba_scipy_v)
 plt.figure()
 io.imshow(prueba_ka_v)
 ##5.1.1. Función MyCCorrelation 2.1
 plt.figure("original_funcionpython")
-plt.subplot(1,2,1)
+plt.subplot(1,3,1)
 plt.title("Imagen original escala grises")
 plt.imshow(rosas,cmap="gray")
 plt.axis("off")
-plt.subplot(1,2,2)
+plt.subplot(1,3,2)
 plt.title("Imagen correlate2d con kernel a")
+plt.imshow(prueba_scipy,cmap="gray")
+plt.axis("off")
+plt.title("Imagen MyCCorrelation con kernel a")
 plt.imshow(prueba_scipy,cmap="gray")
 plt.axis("off")
 plt.tight_layout()
@@ -177,9 +194,37 @@ plt.imshow(cross3P7_filtroGauss,cmap="gray")
 plt.axis("off")
 plt.tight_layout()
 plt.show()
+##5.1.2. Aplicaciones de Cross-Correlación 8.
+prueba_kc_v=MyCCorrelation_201719942_201822262(rosas_noise,kernel_c,boundary_condition="valid")
+prueba_kd_v=MyCCorrelation_201719942_201822262(rosas_noise,kernel_d,boundary_condition="valid")
+plt.figure("kernel_c_y_kernel_d")
+plt.subplot(1,2,1)
+plt.title("Imagen con kernel c")
+plt.imshow(prueba_kc_v,cmap="gray")
+plt.axis("off")
+plt.subplot(1,2,2)
+plt.title("Imagen con kernel d")
+plt.imshow(prueba_kd_v,cmap="gray")
+plt.axis("off")
+plt.tight_layout()
+plt.show()
+##BONO
+prueba_kc_BONO=np.absolute(MyCCorrelation_201719942_201822262(rosas,kernel_c,boundary_condition="valid"))
+prueba_kd_BONO=np.absolute(MyCCorrelation_201719942_201822262(rosas,kernel_d,boundary_condition="valid"))
+plt.figure("BONO")
+plt.subplot(1,2,1)
+plt.title("Valor absoluto de la\nimagen con kernel c")
+plt.imshow(prueba_kc_BONO,cmap="gray")
+plt.axis("off")
+plt.subplot(1,2,2)
+plt.title("Imagen con kernel d")
+plt.imshow(prueba_kd_BONO,cmap="gray")
+plt.axis("off")
+plt.tight_layout()
+plt.show()
 ##
 a = np.array([[1, 1,1], [2, 2,2], [3, 3,3]])
-b=np.insert(a, 0, 0, axis=1)
+b=np.insert(a, 0, 0, axis=1) * 2
 b=np.insert(b, 0, 0, axis=0)
 b=np.insert(b, b.shape[0], 0, axis=0)
 b=np.insert(b, b.shape[1], 0, axis=1)
