@@ -9,11 +9,11 @@ import os
 import glob
 import numpy as np
 import skimage.io as io
-import requests
+import skimage.exposure as expo
 from scipy.signal import correlate2d
 from skimage.color import rgb2gray
 import matplotlib.pyplot as plt
-
+##
 #se crean kernels propuestos en la guía
 kernel_a=np.array([[1,1,1],[1,1,1],[1,1,1]])
 kernel_b=(1/9)*kernel_a
@@ -35,7 +35,7 @@ def MyCCorrelation_201719942_201822262(image, kernel, boundary_condition="fill")
     b=round((len(kernel[0])-1)/2)
     if boundary_condition=="fill": #FALTA ARREGLAR
         for i in range(a):
-            fill_image=np.insert(image, 0, 0, axis=1)
+            fill_image=np.insert(image, 0, 0, axis=1) #REVISAR
             fill_image=np.insert(fill_image, 0, 0, axis=0)
             fill_image=np.insert(fill_image, fill_image.shape[0], 0, axis=0)
             fill_image=np.insert(fill_image, fill_image.shape[1], 0, axis=1)
@@ -70,8 +70,8 @@ def error_cuadrado(imageref,imagenew):
     for i in range(len(imageref)):
         for j in range(len(imageref[0])):
             suma_error+=(imageref[i][j]-imagenew[i][j])**2
-            print(imageref[i][j],imagenew[i][j])
-    print(suma_error)
+            #print(imageref[i][j],imagenew[i][j])
+    #print(suma_error)
     error=suma_error/(len(imageref)*len(imageref[0]))
     return error
 rosas=io.imread("roses.jpg")
@@ -109,8 +109,9 @@ plt.subplot(1,3,2)
 plt.title("Imagen correlate2d con kernel a")
 plt.imshow(prueba_scipy,cmap="gray")
 plt.axis("off")
+plt.subplot(1,3,3)
 plt.title("Imagen MyCCorrelation con kernel a")
-plt.imshow(prueba_scipy,cmap="gray")
+plt.imshow(prueba_ka,cmap="gray")
 plt.axis("off")
 plt.tight_layout()
 plt.show()
@@ -224,10 +225,103 @@ plt.tight_layout()
 plt.show()
 ##
 a = np.array([[1, 1,1], [2, 2,2], [3, 3,3]])
-b=np.insert(a, 0, 0, axis=1) * 2
+b=np.insert(a, 0, 0, axis=1)
+b=np.insert(b, 0, 0, axis=0)
+b=np.insert(b, b.shape[0], 0, axis=0)
+b=np.insert(b, b.shape[1], 0, axis=1)
+b=np.insert(b, 0, 0, axis=1)
 b=np.insert(b, 0, 0, axis=0)
 b=np.insert(b, b.shape[0], 0, axis=0)
 b=np.insert(b, b.shape[1], 0, axis=1)
 print(b)
 print(b.shape)
 print(a.shape)
+##PROBLEMA BIOMÉDICA
+reference1=io.imread("reference1.jpg")
+reference2=io.imread("reference2.jpg")
+reference3=io.imread("reference3.jpeg")
+parasitized=io.imread("Parasitized.png")
+uninfected=io.imread("Uninfected.png")
+plt.figure("HistogramasMalaria")
+plt.subplot(2,4,1)
+plt.title("Imagen reference1.jpg")
+plt.imshow(reference1)
+plt.axis("off")
+plt.subplot(2,4,5)
+plt.title("Histograma reference1.jpg")
+plt.hist(reference1.flatten())
+plt.subplot(2,4,2)
+plt.title("Imagen reference2.jpg")
+plt.imshow(reference2)
+plt.axis("off")
+plt.subplot(2,4,6)
+plt.title("Histograma reference2.jpg")
+plt.hist(reference2.flatten())
+plt.subplot(2,4,3)
+plt.title("Imagen reference3.jpeg")
+plt.imshow(reference3)
+plt.axis("off")
+plt.subplot(2,4,7)
+plt.title("Histograma reference7.jpeg")
+plt.hist(reference3.flatten())
+plt.subplot(2,4,4)
+plt.title("Imagen Parasitized.png")
+plt.imshow(parasitized)
+plt.axis("off")
+plt.subplot(2,4,8)
+plt.title("Histograma Parasitized.png")
+plt.hist(parasitized.flatten())
+plt.tight_layout()
+plt.show()
+##
+def myImagePreprocessor(image, target_hist, action="show"):
+    matched_image=expo.match_histograms(image,target_hist)
+    equa_ref=expo.equalize_hist(target_hist)
+    equa_image=expo.equalize_hist(image)
+    #if action=="show":
+    plt.figure()
+    plt.subplot(5,2,1)
+    plt.title("Imagen original")
+    plt.imshow(image)
+    plt.axis("off")
+    plt.subplot(5,2,2)
+    plt.title("Histograma original")
+    plt.hist(image.flatten(),bins=256)
+    plt.subplot(5,2,3)
+    plt.title("Imagen original ecualizada")
+    plt.imshow(equa_image)
+    plt.axis("off")
+    plt.subplot(5,2,4)
+    plt.title("Histograma original ecualizada")
+    plt.hist(equa_image.flatten(),bins=256)
+    plt.subplot(5,2,5)
+    plt.title("Imagen referencia")
+    plt.imshow(target_hist)
+    plt.axis("off")
+    plt.subplot(5,2,6)
+    plt.title("Histograma referencia")
+    plt.hist(target_hist.flatten(),bins=256)
+    plt.subplot(5,2,7)
+    plt.title("Imagen referencia ecualizada")
+    plt.imshow(equa_ref)
+    plt.axis("off")
+    plt.subplot(5,2,8)
+    plt.title("Histograma referencia ecualizada")
+    plt.hist(equa_ref.flatten(),bins=256)
+    plt.subplot(5, 2,9)
+    plt.title("Imagen especificada")
+    plt.imshow(matched_image)
+    plt.axis("off")
+    plt.subplot(5, 2, 10)
+    plt.title("Histograma especificada")
+    plt.hist(matched_image.flatten(),bins=256)
+    plt.tight_layout()
+    if action=="show":
+        plt.show()
+    elif action=="save":
+        plt.savefig("Preprocesamiento")
+        plt.close()
+    return matched_image
+
+ref1=myImagePreprocessor(parasitized,reference1,action="save")
+ref1_show=myImagePreprocessor(parasitized,reference1,action="show")
