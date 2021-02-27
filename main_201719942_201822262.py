@@ -353,3 +353,5 @@ ref2_show=myImagePreprocessor(parasitized,reference2,action="show")
 ref3=myImagePreprocessor(parasitized,reference3,action="save")
 ref3_show=myImagePreprocessor(parasitized,reference3,action="show")
 #input("Press Enter to continue...") # input para continuar con el programa cuando usuario presione Enter cuando desee
+mejor_especif=myImagePreprocessor(parasitized,ref2,action="save")
+mejor_especif_show=myImagePreprocessor(uninfected,ref2,action="show")
