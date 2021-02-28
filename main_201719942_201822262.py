@@ -2,11 +2,6 @@
 #Manuel Gallegos Bustamante #Código: 201719942
 #Análisis y procesamiento de imágenes: Proyecto2 Entrega1
 #Se importan librerías que se utilizarán para el desarrollo del laboratorio
-from skimage.filters import threshold_otsu
-import nibabel
-from scipy.io import loadmat
-import os
-import glob
 import numpy as np
 import skimage.io as io
 import skimage.exposure as expo
@@ -25,7 +20,6 @@ def gaussian_kernel(size, sigma):
     normal = 1/(2.0 * np.pi * sigma**2)
     g = np.exp(-((x**2 + y**2)/(2.0 * sigma**2))) * normal
     return g
-##
 def MyCCorrelation_201719942_201822262(image, kernel, boundary_condition="fill"):
     """
     Función para la cross-correlación de una imagen y un kenerl dados. Se aplica la condición de frontera  deseada por el usuario
@@ -45,19 +39,18 @@ def MyCCorrelation_201719942_201822262(image, kernel, boundary_condition="fill")
             fill_image=np.insert(fill_image, fill_image.shape[0], 0, axis=0)
             fill_image=np.insert(fill_image, fill_image.shape[1], 0, axis=1)
         CCorrelation = np.zeros((len(image)+a*2, len(image[0])+b*2)) # se crea matriz para almacenar cross-correlación con tamaño dependiente de a y b          #print(CCorrelation.shape)
-        for filas in range(0+a,len(fill_image)-a): #
+        for filas in range(0+a,len(fill_image)-a): # recorrido para realizar la cross-correlación empezando sobre pixel central dado por a y b
             for columnas in range(0+b,len(fill_image[0])-b):
-                i_fila=filas-a
-                for multi_i in range(len(kernel)):
-                    j_column=columnas-b
+                i_fila=filas-a # contador de filas para tomar vecinos de pixel central
+                for multi_i in range(len(kernel)): # recorrido por el tamaño del que kernal para sacar prom del pixelcentral evaluda
+                    j_column=columnas-b # contador pata columans para tomar vecinos del pixel central
                     for multi_j in range(len(kernel[0])):
-                        CCorrelation[filas][columnas]+=fill_image[i_fila][j_column]*kernel[multi_i][multi_j]
-                        j_column+=1
-                    i_fila+=1
-
-    elif boundary_condition=="symm":
-        copia = image.copy()
-        primera_fila = copia[0]
+                        CCorrelation[filas][columnas]+=fill_image[i_fila][j_column]*kernel[multi_i][multi_j] # cálculo cross-correlación
+                        j_column+=1 #aumento contador columnas
+                    i_fila+=1 # aumento contador filas
+    elif boundary_condition=="symm": # para condición de frontera symm
+        copia = image.copy() # copia para realizar reflejo de la imagen
+        primera_fila = copia[0] # primera fila
         # - encuentro las primeras filas
         primeras_filas = copia[0, :]
         # - agrego primer y último valor a la fila
@@ -69,33 +62,23 @@ def MyCCorrelation_201719942_201822262(image, kernel, boundary_condition="fill")
         # guardo los valores de las filas secundarias
         if (a > 1):
             for i in range(0, len(a)):
-                # almacena la segunda fila
+                # almacena la segunda fila añadiendo al inicio y al final el valor de la esquina correspondiente
                 segundas_filas = copia[i + 1, :]
                 segundas_filas = np.insert(segundas_filas, 0, np.array(copia[0][0])*a)  # con elemento al principio
                 segundas_filas = np.append(primera_fila, np.array(copia[0][len(copia[0]) - 1])*a) #con elemento final
                 filas_secundarias = np.append(filas_secundarias, segundas_filas)
-        print(copia[0][len(copia[0])-1])
-        print(copia[0][0])
-        print(image[0][0])
-                #primeras_filas = np.insert(primeras_filas, i + 1, filas_secundarias[i])
-                #primera_fila = np.insert(primera_fila, 0, primera_fila[0]) # agrego en el primer espacio el valor del primer espacio
-                #primera_fila = np.insert(primera_fila, len(primera_fila) - 1, primera_fila[len(primera_fila) - 1]) # agrego en el ultimo espacio el valor del ultimo espacio
         # -encuentro las ultimas filas
-        ultima_fila = copia[len(copia) - 1, :]
+        ultima_fila = copia[len(copia) - 1, :] # se extrae ´última fila y se insertan valores extremos para
         ultima_fila = np.insert(ultima_fila, 0, np.array(copia[len(copia)-1][0])*a)
         ultima_fila = np.append(ultima_fila, np.array(copia[len(copia)-1][len(copia[0])-1])*a)
         filas_secundarias2 = np.array([[]])
         filas_secundarias2 = np.insert(filas_secundarias2, 0, ultima_fila)
         if (a > 1): # PARA KERNELS CON a>1
             for i in range(0, len(a)):
-                segundas_filas = copia[len(copia) - i - 2, :]
+                segundas_filas = copia[len(copia) - i - 2, :] # se añaden segundas filas incluyendo en sus extremos el valor del pixel de la esquina correspondiente
                 segundas_filas = np.insert(segundas_filas, 0, np.array(copia[len(copia)-1][0])*a)
                 segundas_filas = np.insert(segundas_filas, len(segundas_filas), np.array(copia[len(copia)-1][len(copia[0]) - 1])*a)
                 filas_secundarias2 = np.append(filas_secundarias2, segundas_filas)
-                #ultimas_filas = np.insert(ultimas_filas, i + 1, filas_secundarias[i])
-                #ultima_fila = np.insert(ultima_fila, 0, ultima_fila[0])  # agrego en el primer espacio el valor del primer espacio
-                #ultima_fila = np.insert(ultima_fila, len(ultima_fila) - 1, ultima_fila[len(ultima_fila) - 1])  # agrego en el ultimo espacio el valor del ultimo espacio
-
         # -encuentro las primeras columnas
         primeras_columnas = copia[:, 0]
         columnas_secundarias = np.array([[]])
@@ -103,32 +86,20 @@ def MyCCorrelation_201719942_201822262(image, kernel, boundary_condition="fill")
         if(a > 1):
             for i in range(0, len(a)):
                 segundas_columnas = copia[:, i+1]
-                #columnas_secundarias = np.insert(columnas_secundarias, i, segundas_columnas)
-                #primeras_columnas = np.insert(primeras_columnas, i, columnas_secundarias[i])
                 columnas_secundarias = np.append(columnas_secundarias, segundas_columnas)
-
-
         # -encuentro las ultimas columnas
-
         ultimas_columnas = copia[:, len(copia[0])-1]
         columnas_secundarias2 = np.array([[]])
         columnas_secundarias2 = np.append(columnas_secundarias2, ultimas_columnas)
         if(a>1):
             for i in range(0, len(a)):
                 segundas_columnas = copia[:, len(copia[0])-2-i]
-                #columnas_secundarias2 = np.insert(columnas_secundarias2, i, segundas_columnas)
-                #ultimas_columnas = np.insert(ultimas_columnas, i, columnas_secundarias2[i])
                 columnas_secundarias2 = np.append(columnas_secundarias2, segundas_columnas)
-
-
         # -se agrega el primer valor y el último valor al principio y final de la primera fila
         #primera_fila = np.insert(primera_fila, 0, primera_fila[0])
         #primera_fila = np.insert(primera_fila, len(primera_fila) - 1, primera_fila[len(primera_fila) - 1])
-
-
         # - se agregan las filas para la respuesta
-
-        for i in range(0, a): #REVISAR
+        for i in range(0, a):
             if a > 1:
                 copia = np.insert(copia, 0, columnas_secundarias[i], axis=1)
                 copia = np.insert(copia, len(copia[0]), columnas_secundarias2[i], axis=1)
@@ -143,19 +114,28 @@ def MyCCorrelation_201719942_201822262(image, kernel, boundary_condition="fill")
             else:
                 copia = np.insert(copia, 0, filas_secundarias, axis=0)
                 copia = np.insert(copia, len(copia), filas_secundarias2, axis=0)
-        CCorrelation = copia.copy()
-            #np.zeros((len(image) + a * 2, len(image[0]) + b * 2))  # se crea matriz para almacenar cross-correlación con tamaño dependiente de a y b          #print(CCorrelation.shape)
+        #CCorrelation = np.zeros((len(image) + a * 2, len(image[0]) + b * 2))  # se crea matriz para almacenar cross-correlación con tamaño dependiente de a y b          #print(CCorrelation.shape)
+        CCorrelation_ceros = np.zeros((len(image) , len(image[0])))
         for filas in range(0+a, len(copia) - a):  #
             for columnas in range(0+b, len(copia[0]) - b):
                 i_fila = filas - a
                 for multi_i in range(len(kernel)):
                     j_column = columnas - b
                     for multi_j in range(len(kernel[0])):
-                        CCorrelation[filas][columnas] += copia[i_fila][j_column] * kernel[multi_i][multi_j]
+                        CCorrelation_ceros[filas-a][columnas-b] += copia[i_fila][j_column] * kernel[multi_i][multi_j]
                         j_column += 1
                     i_fila += 1
-
-
+        CCorrelation=CCorrelation_ceros.copy()
+        for reflejo in range(a):
+            CCorrelation=np.insert(CCorrelation,0,CCorrelation_ceros[:, reflejo],axis=1)
+            CCorrelation = np.insert(CCorrelation, len(CCorrelation[0]), CCorrelation_ceros[:, len(CCorrelation_ceros[0])-1-reflejo], axis=1)
+        for reflejofilas in range(a):
+            fila_aux= np.append(CCorrelation_ceros[reflejofilas, :],np.array(CCorrelation_ceros[0][len(CCorrelation_ceros[0])-1])*a)
+            fila_aux=np.insert(fila_aux, 0, np.array(CCorrelation_ceros[0][0])*a)
+            fila_aux_final=np.append(CCorrelation_ceros[len(CCorrelation_ceros)-1-reflejofilas, :],np.array(CCorrelation_ceros[0][len(CCorrelation_ceros)-1])*a)
+            fila_aux_final=np.insert(fila_aux_final, 0, np.array(CCorrelation_ceros[len(CCorrelation_ceros)-1][0])*a)
+            CCorrelation = np.insert(CCorrelation, 0,fila_aux, axis=0)
+            CCorrelation = np.insert(CCorrelation, len(CCorrelation_ceros), fila_aux_final,axis=0)
     elif boundary_condition=="valid":
         CCorrelation=np.zeros((len(image)-a*2,len(image[0])-b*2))
         for filas in range(0+a,len(image)-a):
@@ -209,8 +189,8 @@ prueba_scipy_s=correlate2d(rosas,kernel_a,boundary="symm")
 #print(prueba_ka_v,prueba_scipy_v)
 
 error_ka_s=error_cuadrado(prueba_scipy_s, prueba_ka_s)
-#print(error_ka_s)
-#print(prueba_scipy_s)
+print(error_ka_s)
+print(prueba_scipy_s)
 print(prueba_ka_s)
 io.imshow(prueba_scipy_s)
 plt.figure()
