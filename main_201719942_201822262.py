@@ -25,6 +25,7 @@ def gaussian_kernel(size, sigma):
     normal = 1/(2.0 * np.pi * sigma**2)
     g = np.exp(-((x**2 + y**2)/(2.0 * sigma**2))) * normal
     return g
+##
 def MyCCorrelation_201719942_201822262(image, kernel, boundary_condition="fill"):
     """
     Función para la cross-correlación de una imagen y un kenerl dados. Se aplica la condición de frontera  deseada por el usuario
@@ -53,8 +54,92 @@ def MyCCorrelation_201719942_201822262(image, kernel, boundary_condition="fill")
                         CCorrelation[filas][columnas]+=fill_image[i_fila][j_column]*kernel[multi_i][multi_j]
                         j_column+=1
                     i_fila+=1
+
     elif boundary_condition=="symm":
-        True
+        copia = image.copy()
+        primera_fila = 0
+        ultima_fila = 0
+        primera_columna = 0
+        ultima_columna = 0
+        resp = np.array([[]])
+        CCorrelation = np.zeros((len(image) + a * 2, len(image[0]) + b * 2))
+        # - encuentro las primeras filas
+        primeras_filas = copia[0, :]
+        # - agrego primer y último valor a la fila
+        primera_fila = np.insert(primera_fila, 0, copia[0])
+
+        primera_fila = np.insert(primera_fila, len(primera_fila) - 1, primera_fila[len(primera_fila) - 1])
+
+        filas_secundarias = np.array([[]])
+        # guardo los valores de las filas secundarias
+        if (a > 1):
+            for i in range(0, len(a)):
+                segundas_filas = copia[i + 1, :]
+                filas_secundarias = np.insert(filas_secundarias, i, segundas_filas)
+                primeras_filas = np.insert(primeras_filas, i + 1, filas_secundarias[i])
+                primera_fila = np.insert(primera_fila, 0, primera_fila[0]) # agrego en el primer espacio el valor del primer espacio
+                primera_fila = np.insert(primera_fila, len(primera_fila) - 1, primera_fila[len(primera_fila) - 1]) # agrego en el ultimo espacio el valor del ultimo espacio
+
+        # -encuentro las ultimas filas
+        ultimas_filas = copia[len(copia) - 1, :]
+        filas_secundarias = np.array([[]])
+        if (a > 1): # PARA KERNELS CON a>1
+            for i in range(0, len(a)):
+                segundas_filas = copia[len(copia) - i - 1, :]
+                filas_secundarias = np.insert(filas_secundarias, i, segundas_filas)
+                ultimas_filas = np.insert(ultimas_filas, i + 1, filas_secundarias[i])
+                ultimas_filas = np.insert(ultimas_filas, 0,
+                                         ultimas_filas[0])  # agrego en el primer espacio el valor del primer espacio
+                ultimas_filas = np.insert(ultimas_filas, len(ultimas_filas) - 1, ultimas_filas[
+                    len(ultimas_filas) - 1])  # agrego en el ultimo espacio el valor del ultimo espacio
+
+        # -encuentro las primeras columnas
+        primeras_columnas = copia[:, 0]
+        columnas_secundarias = np.array([[]])
+        if(a>1):
+            for i in range(0, len(a)):
+                segundas_columnas = copia[:, i+1]
+                columnas_secundarias = np.insert(columnas_secundarias, i, segundas_columnas)
+                primeras_columnas = np.insert(primeras_columnas, i, columnas_secundarias[i])
+
+
+        # -encuentro las ultimas columnas
+        ultimas_columnas = copia[:, len(copia[0])-1]
+        columnas_secundarias = np.array([[]])
+        if(a>1):
+            for i in range(0, len(a)):
+                segundas_columnas = copia[:, len(copia[i]-1) ]
+                columnas_secundarias = np.insert(columnas_secundarias, i, segundas_columnas)
+                ultimas_columnas = np.insert(ultimas_columnas, i, columnas_secundarias[i])
+
+
+        # -se agrega el primer valor y el último valor al principio y final de la primera fila
+        primera_fila = np.insert(primera_fila, 0, primera_fila[0])
+        primera_fila = np.insert(primera_fila, len(primera_fila) - 1, primera_fila[len(primera_fila) - 1])
+
+
+        # - se agregan las filas para la respuesta
+            #for i in range(0, len(image)): #REVISAR
+        #    resp = np.insert(copia[i + 1], i, primera_columna[i], axis=0)
+        #resp = np.insert(resp, len(copia) - 1, ultima_fila)#se agrega la última fila
+
+        """
+        if a == 1:
+            #se extraen las filas y columnas especificadas
+            primera_fila = copia[0, :]
+            ultima_fila = copia[len(copia)-1, :]
+            primera_columna = copia[:,0]
+            ultima_columna = copia[:, len(copia)-1]
+            #se agrega el primer valor y el último valor al principio y final de la primera fila
+            primera_fila = np.insert(primera_fila, 0, primera_fila[0])
+            primera_fila = np.insert(primera_fila, len(primera_fila) - 1, primera_fila[len(primera_fila)-1])
+            resp = np.insert(resp, 0, primera_fila) # se agrega la primera fila a la respuesta
+            resp = np.insert(copia[1], 0, primera_columna[0])
+            # se agregan las filas para la respuesta
+            #for i in range(0, len(image)): #REVISAR
+            #    resp = np.insert(copia[i + 1], i, primera_columna[i], axis=0)
+            resp = np.insert(resp, len(copia) - 1, ultima_fila)#se agrega la última fila """
+
     elif boundary_condition=="valid":
         CCorrelation=np.zeros((len(image)-a*2,len(image[0])-b*2))
         for filas in range(0+a,len(image)-a):
@@ -67,6 +152,13 @@ def MyCCorrelation_201719942_201822262(image, kernel, boundary_condition="fill")
                         j_column+=1
                     i_fila+=1
     return CCorrelation
+rosas=io.imread("roses.jpg")
+rosas_noise=io.imread("noisy_roses.jpg")
+rosas=rgb2gray(rosas) #se le quita 3D a la imagen para convertirla en una imagen blanco-negro
+rosas_noise=rgb2gray(rosas_noise)
+prueba_ka_s=MyCCorrelation_201719942_201822262(rosas,kernel_a,boundary_condition="symm")
+#print(prueba_ka_s)
+##
 def error_cuadrado(imageref,imagenew):
     """
     Calculo error cruadrático medio
@@ -80,17 +172,26 @@ def error_cuadrado(imageref,imagenew):
             suma_error+=(imageref[i][j]-imagenew[i][j])**2 # suma a la variable suma_error la resta al cuadrado de la posición evaluada en ambas imagenes
     error=suma_error/(len(imageref)*len(imageref[0])) # división de la suma de restas al cuadrado calculada previamente entre las dimensiones de la imagen (cantidad de pixeles)
     return error
+
 #carga de imágenes con io.imread
 rosas=io.imread("roses.jpg")
 rosas_noise=io.imread("noisy_roses.jpg")
 rosas=rgb2gray(rosas) #se le quita 3D a la imagen para convertirla en una imagen blanco-negro
 rosas_noise=rgb2gray(rosas_noise) #se le quita 3D a la imagen para convertirla en una imagen blanco-negro          #print(rosas.shape) #print(kernel_a.shape) print(len(rosas))
 #Comparaciones de resultados función creada con función propia de scipy.signal: correlate2d
+
 prueba_ka=MyCCorrelation_201719942_201822262(rosas,kernel_a)
 prueba_scipy=correlate2d(rosas,kernel_a,boundary="fill")
+
 prueba_ka_v=MyCCorrelation_201719942_201822262(rosas,kernel_a,boundary_condition="valid")
 prueba_scipy_v=correlate2d(rosas,kernel_a,mode="valid")
-#print(prueba_scipy.shape)      print(prueba_scipy_v.shape)       print(prueba_ka_v.shape)
+
+prueba_ka_s=MyCCorrelation_201719942_201822262(rosas,kernel_a,boundary_condition="symm")
+prueba_scipy_s=correlate2d(rosas,kernel_a,boundary="symm")
+
+print(prueba_ka_s)
+
+##
 """##
 error_ka=error_cuadrado(prueba_scipy,prueba_ka)
 print(error_ka)
@@ -257,28 +358,31 @@ reference2=io.imread("reference2.jpg")
 reference3=io.imread("reference3.jpeg")
 parasitized=io.imread("Parasitized.png")
 uninfected=io.imread("Uninfected.png")
-"""plt.figure("HistogramasMalaria") 
-plt.subplot(2,4,1)
+plt.figure("HistogramasMalaria")
+plt.subplot(2,3,1)
 plt.title("Imagen reference1.jpg")
-plt.imshow(reference1)
+plt.imshow(rgb2gray(reference1),cmap="gray")
 plt.axis("off")
-plt.subplot(2,4,5)
+plt.subplot(2,3,4)
 plt.title("Histograma reference1.jpg")
-plt.hist(reference1.flatten())
-plt.subplot(2,4,2)
+plt.hist(rgb2gray(reference1).flatten(),bins=256)
+plt.tight_layout()
+plt.subplot(2,3,2)
 plt.title("Imagen reference2.jpg")
-plt.imshow(reference2)
+plt.imshow(rgb2gray(reference2),cmap="gray")
 plt.axis("off")
-plt.subplot(2,4,6)
+plt.subplot(2,3,5)
 plt.title("Histograma reference2.jpg")
-plt.hist(reference2.flatten())
-plt.subplot(2,4,3)
+plt.hist(rgb2gray(reference2).flatten(),bins=256)
+plt.tight_layout()
+plt.subplot(2,3,3)
 plt.title("Imagen reference3.jpeg")
-plt.imshow(reference3)
+plt.imshow(rgb2gray(reference3),cmap="gray")
 plt.axis("off")
-plt.subplot(2,4,7)
+plt.subplot(2,3,6)
 plt.title("Histograma reference7.jpeg")
-plt.hist(reference3.flatten())
+plt.hist(rgb2gray(reference3).flatten(),bins=256)
+plt.tight_layout()
 plt.subplot(2,4,4)
 plt.title("Imagen Parasitized.png")
 plt.imshow(parasitized)
@@ -287,7 +391,7 @@ plt.subplot(2,4,8)
 plt.title("Histograma Parasitized.png")
 plt.hist(parasitized.flatten())
 plt.tight_layout()
-plt.show()"""
+plt.show()
 def myImagePreprocessor(image, target_hist, action="show"):
     """
     Preprocesamiento de imagen de entrada con imagen target
@@ -353,5 +457,5 @@ ref2_show=myImagePreprocessor(parasitized,reference2,action="show")
 ref3=myImagePreprocessor(parasitized,reference3,action="save")
 ref3_show=myImagePreprocessor(parasitized,reference3,action="show")
 #input("Press Enter to continue...") # input para continuar con el programa cuando usuario presione Enter cuando desee
-mejor_especif=myImagePreprocessor(parasitized,ref2,action="save")
-mejor_especif_show=myImagePreprocessor(uninfected,ref2,action="show")
+mejor_especif=myImagePreprocessor(parasitized,reference2,action="save")
+mejor_especif_show=myImagePreprocessor(uninfected,reference2,action="show")
