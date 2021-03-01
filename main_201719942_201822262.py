@@ -301,7 +301,7 @@ plt.imshow(prueba_kd_v,cmap="gray")
 plt.axis("off")
 plt.tight_layout()
 plt.show()
-##BONO
+#BONO
 input("Press Enter to continue...") # input para continuar con el programa cuando usuario presione Enter cuando desee
 prueba_kc_BONO=np.absolute(MyCCorrelation_201719942_201822262(rosas,kernel_c,boundary_condition="valid"))
 prueba_kd_BONO=np.absolute(MyCCorrelation_201719942_201822262(rosas,kernel_d,boundary_condition="valid"))
