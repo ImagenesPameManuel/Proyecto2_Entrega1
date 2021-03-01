@@ -85,7 +85,7 @@ def MyCCorrelation_201719942_201822262(image, kernel, boundary_condition="fill")
         columnas_secundarias = np.append(columnas_secundarias,primeras_columnas)
         if(a > 1):
             for i in range(0, len(a)):
-                segundas_columnas = copia[:, i+1]
+                segundas_columnas = copia[:, i+1] # se agregan columans en una misma matriz
                 columnas_secundarias = np.append(columnas_secundarias, segundas_columnas)
         # -encuentro las ultimas columnas
         ultimas_columnas = copia[:, len(copia[0])-1]
@@ -93,12 +93,10 @@ def MyCCorrelation_201719942_201822262(image, kernel, boundary_condition="fill")
         columnas_secundarias2 = np.append(columnas_secundarias2, ultimas_columnas)
         if(a>1):
             for i in range(0, len(a)):
-                segundas_columnas = copia[:, len(copia[0])-2-i]
+                segundas_columnas = copia[:, len(copia[0])-2-i] # se agregan columnas en una única matriz
                 columnas_secundarias2 = np.append(columnas_secundarias2, segundas_columnas)
         # -se agrega el primer valor y el último valor al principio y final de la primera fila
-        #primera_fila = np.insert(primera_fila, 0, primera_fila[0])
-        #primera_fila = np.insert(primera_fila, len(primera_fila) - 1, primera_fila[len(primera_fila) - 1])
-        # - se agregan las filas para la respuesta
+        # - se agregan las columnas para la respuesta
         for i in range(0, a):
             if a > 1:
                 copia = np.insert(copia, 0, columnas_secundarias[i], axis=1)
@@ -106,45 +104,43 @@ def MyCCorrelation_201719942_201822262(image, kernel, boundary_condition="fill")
             else:
                 copia = np.insert(copia, 0, columnas_secundarias, axis=1)
                 copia = np.insert(copia, len(copia[0]), columnas_secundarias2, axis=1)
-
-        for i in range(0, a): #REVISAR
+        for i in range(0, a): #se agregan filas
             if a > 1:
                 copia = np.insert(copia, 0, filas_secundarias[i], axis=0)
                 copia = np.insert(copia, len(copia), filas_secundarias2[i], axis=0)
             else:
                 copia = np.insert(copia, 0, filas_secundarias, axis=0)
                 copia = np.insert(copia, len(copia), filas_secundarias2, axis=0)
-        #CCorrelation = np.zeros((len(image) + a * 2, len(image[0]) + b * 2))  # se crea matriz para almacenar cross-correlación con tamaño dependiente de a y b          #print(CCorrelation.shape)
-        CCorrelation_ceros = np.zeros((len(image) , len(image[0])))
-        for filas in range(0+a, len(copia) - a):  #
+        CCorrelation_ceros = np.zeros((len(image) , len(image[0]))) # matriz para cross-correlación parcial sin bordes
+        for filas in range(0+a, len(copia) - a):  # recorrido para realizar cross-correlación de forma similar a método fill
             for columnas in range(0+b, len(copia[0]) - b):
                 i_fila = filas - a
                 for multi_i in range(len(kernel)):
                     j_column = columnas - b
                     for multi_j in range(len(kernel[0])):
-                        CCorrelation_ceros[filas-a][columnas-b] += copia[i_fila][j_column] * kernel[multi_i][multi_j]
+                        CCorrelation_ceros[filas-a][columnas-b] += copia[i_fila][j_column] * kernel[multi_i][multi_j] # cálculo suma para crosscorrelación
                         j_column += 1
                     i_fila += 1
-        CCorrelation=CCorrelation_ceros.copy()
-        for reflejo in range(a):
+        CCorrelation=CCorrelation_ceros.copy() # respuesta final en la cual tendrá bordes reflejjados de
+        for reflejo in range(a): # recorrido para reflego de columnas
             CCorrelation=np.insert(CCorrelation,0,CCorrelation_ceros[:, reflejo],axis=1)
             CCorrelation = np.insert(CCorrelation, len(CCorrelation[0]), CCorrelation_ceros[:, len(CCorrelation_ceros[0])-1-reflejo], axis=1)
-        for reflejofilas in range(a):
-            fila_aux= np.append(CCorrelation_ceros[reflejofilas, :],np.array(CCorrelation_ceros[0][len(CCorrelation_ceros[0])-1])*a)
+        for reflejofilas in range(a): # recorrido para reflejo filas
+            fila_aux= np.append(CCorrelation_ceros[reflejofilas, :],np.array(CCorrelation_ceros[0][len(CCorrelation_ceros[0])-1])*a) # a cada fila se le agregan en sus extremos los valores de las esquinas correspondientes
             fila_aux=np.insert(fila_aux, 0, np.array(CCorrelation_ceros[0][0])*a)
             fila_aux_final=np.append(CCorrelation_ceros[len(CCorrelation_ceros)-1-reflejofilas, :],np.array(CCorrelation_ceros[0][len(CCorrelation_ceros)-1])*a)
             fila_aux_final=np.insert(fila_aux_final, 0, np.array(CCorrelation_ceros[len(CCorrelation_ceros)-1][0])*a)
             CCorrelation = np.insert(CCorrelation, 0,fila_aux, axis=0)
             CCorrelation = np.insert(CCorrelation, len(CCorrelation_ceros), fila_aux_final,axis=0)
-    elif boundary_condition=="valid":
-        CCorrelation=np.zeros((len(image)-a*2,len(image[0])-b*2))
-        for filas in range(0+a,len(image)-a):
+    elif boundary_condition=="valid": # método de frontera valid
+        CCorrelation=np.zeros((len(image)-a*2,len(image[0])-b*2)) # matriz para almacenar respuesta
+        for filas in range(0+a,len(image)-a): # recorrido para cálculo crosscorrelación como en métodos anterioes
             for columnas in range(0+b,len(image[0])-b):
                 i_fila=filas-a
                 for multi_i in range(len(kernel)):
                     j_column=columnas-b
                     for multi_j in range(len(kernel[0])):
-                        CCorrelation[filas-a][columnas-b]+=image[i_fila][j_column]*kernel[multi_i][multi_j]
+                        CCorrelation[filas-a][columnas-b]+=image[i_fila][j_column]*kernel[multi_i][multi_j] # cálculo cross-correlación
                         j_column+=1
                     i_fila+=1
     return CCorrelation
@@ -153,8 +149,6 @@ rosas_noise=io.imread("noisy_roses.jpg")
 rosas=rgb2gray(rosas) #se le quita 3D a la imagen para convertirla en una imagen blanco-negro
 rosas_noise=rgb2gray(rosas_noise)
 prueba_ka_s=MyCCorrelation_201719942_201822262(rosas,kernel_a,boundary_condition="symm")
-
-##
 def error_cuadrado(imageref,imagenew):
     """
     Calculo error cruadrático medio
@@ -168,48 +162,29 @@ def error_cuadrado(imageref,imagenew):
             suma_error+=(imageref[i][j]-imagenew[i][j])**2 # suma a la variable suma_error la resta al cuadrado de la posición evaluada en ambas imagenes
     error=suma_error/(len(imageref)*len(imageref[0])) # división de la suma de restas al cuadrado calculada previamente entre las dimensiones de la imagen (cantidad de pixeles)
     return error
-
 #carga de imágenes con io.imread
 rosas=io.imread("roses.jpg")
 rosas_noise=io.imread("noisy_roses.jpg")
 rosas=rgb2gray(rosas) #se le quita 3D a la imagen para convertirla en una imagen blanco-negro
 rosas_noise=rgb2gray(rosas_noise) #se le quita 3D a la imagen para convertirla en una imagen blanco-negro          #print(rosas.shape) #print(kernel_a.shape) print(len(rosas))
 #Comparaciones de resultados función creada con función propia de scipy.signal: correlate2d
-
 prueba_ka=MyCCorrelation_201719942_201822262(rosas,kernel_a)
 prueba_scipy=correlate2d(rosas,kernel_a,boundary="fill")
-
 prueba_ka_v=MyCCorrelation_201719942_201822262(rosas,kernel_a,boundary_condition="valid")
 prueba_scipy_v=correlate2d(rosas,kernel_a,mode="valid")
-
 prueba_ka_s=MyCCorrelation_201719942_201822262(rosas,kernel_a,boundary_condition="symm")
 prueba_scipy_s=correlate2d(rosas,kernel_a,boundary="symm")
-
-#print(prueba_ka_s)
-#print(prueba_ka_v,prueba_scipy_v)
-
 error_ka_s=error_cuadrado(prueba_scipy_s, prueba_ka_s)
-print(error_ka_s)
-print(prueba_scipy_s)
-print(prueba_ka_s)
-io.imshow(prueba_scipy_s)
-plt.figure()
-io.imshow(prueba_ka_s)
-##
-"""##
 error_ka=error_cuadrado(prueba_scipy,prueba_ka)
-print(error_ka)
-io.imshow(prueba_scipy)
-plt.figure()
-io.imshow(prueba_ka)
-##
 error_ka_v=error_cuadrado(prueba_scipy_v,prueba_ka_v)
+print("error kernel a fill")
+print(error_ka)
+print("error kernel a symm")
+print(error_ka_s)
+print("error kernel a valid ")
 print(error_ka_v)
-io.imshow(prueba_scipy_v)
-plt.figure()
-io.imshow(prueba_ka_v)"""
-##5.1.1. Función MyCCorrelation 2.1
-#input("Press Enter to continue...") # input para continuar con el programa cuando usuario presione Enter cuando desee
+#5.1.1. Función MyCCorrelation 2.1
+input("Press Enter to continue...") # input para continuar con el programa cuando usuario presione Enter cuando desee
 plt.figure("original_funcionpython") #figura para mostrar imagen original, imagen con cross-correlación con scipy y con función creada
 plt.subplot(1,3,1) # título y remoción de ejes para las diretentes imágenes visualizadas con mapa de color de grises
 plt.title("Imagen original escala grises")
@@ -226,9 +201,9 @@ plt.axis("off")
 plt.tight_layout()
 plt.show()
 error_ka=error_cuadrado(prueba_scipy,prueba_ka) # cálculo error cuadrático medio
-print(error_ka)
-##5.1.2. Aplicaciones de Cross-Correlación 1.
-#input("Press Enter to continue...") # input para continuar con el programa cuando usuario presione Enter cuando desee
+#print(error_ka)
+#5.1.2. Aplicaciones de Cross-Correlación 1.
+input("Press Enter to continue...") # input para continuar con el programa cuando usuario presione Enter cuando desee
 noise_kernel_a=MyCCorrelation_201719942_201822262(rosas_noise,kernel_a) # cálculo cross-correlación de imagen con ruido con kernels a y b con función creada previamente
 noise_kernel_b=MyCCorrelation_201719942_201822262(rosas_noise,kernel_b)
 plt.figure("original_kernel_ab") # figura para visualizar imagen original y filtrada con kernels a y b con opciónn de frontera fill
@@ -246,8 +221,8 @@ plt.imshow(noise_kernel_b,cmap="gray")
 plt.axis("off")
 plt.tight_layout()
 plt.show()
-##5.1.2. Aplicaciones de Cross-Correlación 3.
-#input("Press Enter to continue...") # input para continuar con el programa cuando usuario presione Enter cuando desee
+#5.1.2. Aplicaciones de Cross-Correlación 3.
+input("Press Enter to continue...") # input para continuar con el programa cuando usuario presione Enter cuando desee
 filtro_Gauss_punto3=gaussian_kernel(5,1) # se crea filtro de Gauss con función proporcionada en el enunciado. Filtro de 5x5b con sigma de 1
 cross_filtroGauss=MyCCorrelation_201719942_201822262(rosas_noise,filtro_Gauss_punto3) # cross-correlación con condición de frontera fill de imagen con ruido y filtro de Gauss creado previamente
 plt.figure("Original_kernel_b_Gauss") # figura para mostrar imagen original e imagen filtrada con filtro de gauss decrito previamente  y kernel b
@@ -265,8 +240,8 @@ plt.imshow(cross_filtroGauss,cmap="gray")
 plt.axis("off")
 plt.tight_layout()
 plt.show()
-##5.1.2. Aplicaciones de Cross-Correlación 5.
-#input("Press Enter to continue...") # input para continuar con el programa cuando usuario presione Enter cuando desee
+#5.1.2. Aplicaciones de Cross-Correlación 5.
+input("Press Enter to continue...") # input para continuar con el programa cuando usuario presione Enter cuando desee
 filtro1_Gauss_punto5=gaussian_kernel(3,1) # creación de filtros Gaussianos con tamaño constante y sigma variable
 filtro2_Gauss_punto5=gaussian_kernel(3,50)
 filtro3_Gauss_punto5=gaussian_kernel(3,100)
@@ -288,8 +263,8 @@ plt.imshow(cross3P5_filtroGauss,cmap="gray")
 plt.axis("off")
 plt.tight_layout()
 plt.show()
-##5.1.2. Aplicaciones de Cross-Correlación 7.  VA A BOTAR ERROR función no sirve para filtros con tamaño diferente 3x3
-#input("Press Enter to continue...") # input para continuar con el programa cuando usuario presione Enter cuando desee
+#5.1.2. Aplicaciones de Cross-Correlación 7.  VA A BOTAR ERROR función no sirve para filtros con tamaño diferente 3x3
+input("Press Enter to continue...") # input para continuar con el programa cuando usuario presione Enter cuando desee
 filtro1_Gauss_punto7=gaussian_kernel(3,5) #se crean tres diferentes filtros de Gauss con función dada variando el tamaño y mateniendo el sigma constante
 filtro2_Gauss_punto7=gaussian_kernel(5,5)
 filtro3_Gauss_punto7=gaussian_kernel(7,5)
@@ -311,8 +286,8 @@ plt.imshow(cross3P7_filtroGauss,cmap="gray")
 plt.axis("off")
 plt.tight_layout()
 plt.show()
-##5.1.2. Aplicaciones de Cross-Correlación 8.
-#input("Press Enter to continue...") # input para continuar con el programa cuando usuario presione Enter cuando desee
+#5.1.2. Aplicaciones de Cross-Correlación 8.
+input("Press Enter to continue...") # input para continuar con el programa cuando usuario presione Enter cuando desee
 prueba_kc_v=MyCCorrelation_201719942_201822262(rosas_noise,kernel_c,boundary_condition="valid") # cross-correlación con kernels c y d con imagen co ruido y condición de frontera valid
 prueba_kd_v=MyCCorrelation_201719942_201822262(rosas_noise,kernel_d,boundary_condition="valid")
 plt.figure("kernel_c_y_kernel_d") # figura ara mostrar cross-correlación de imagen con ruido con kernels c y d
@@ -327,7 +302,7 @@ plt.axis("off")
 plt.tight_layout()
 plt.show()
 ##BONO
-#input("Press Enter to continue...") # input para continuar con el programa cuando usuario presione Enter cuando desee
+input("Press Enter to continue...") # input para continuar con el programa cuando usuario presione Enter cuando desee
 prueba_kc_BONO=np.absolute(MyCCorrelation_201719942_201822262(rosas,kernel_c,boundary_condition="valid"))
 prueba_kd_BONO=np.absolute(MyCCorrelation_201719942_201822262(rosas,kernel_d,boundary_condition="valid"))
 plt.figure("BONO")
@@ -341,23 +316,8 @@ plt.imshow(prueba_kd_BONO,cmap="gray")
 plt.axis("off")
 plt.tight_layout()
 plt.show()
-##
-a = np.array([[1, 1,1], [2, 2,2], [3, 3,3]])
-b=a.copy()
-b=np.append([0,0,0], [[1]*2, [2]],axis=0)
-print(b)
-"""b=np.insert(b, 0, 0, axis=0)
-b=np.insert(b, b.shape[0], 0, axis=0)
-b=np.insert(b, b.shape[1], 0, axis=1)
-b=np.insert(b, 0, 0, axis=1)
-b=np.insert(b, 0, 0, axis=0)
-b=np.insert(b, b.shape[0], 0, axis=0)
-b=np.insert(b, b.shape[1], 0, axis=1)"""
-print(b)
-print(b.shape)
-print(a.shape)
-##PROBLEMA BIOMÉDICA
-#input("Press Enter to continue...") # input para continuar con el programa cuando usuario presione Enter cuando desee
+#PROBLEMA BIOMÉDICA
+input("Press Enter to continue...") # input para continuar con el programa cuando usuario presione Enter cuando desee
 reference1=io.imread("reference1.jpg") # carga de las diferentes imágenes a trabajar en el problema biomédico
 reference2=io.imread("reference2.jpg")
 reference3=io.imread("reference3.jpeg")
@@ -397,6 +357,7 @@ plt.title("Histograma Parasitized.png")
 plt.hist(parasitized.flatten())"""
 plt.tight_layout()
 plt.show()
+input("Press Enter to continue...") # input para continuar con el programa cuando usuario presione Enter cuando desee
 def myImagePreprocessor(image, target_hist, action="show"):
     """
     Preprocesamiento de imagen de entrada con imagen target
@@ -455,12 +416,12 @@ def myImagePreprocessor(image, target_hist, action="show"):
     return matched_image
 ref1=myImagePreprocessor(parasitized,reference1,action="save")
 ref1_show=myImagePreprocessor(parasitized,reference1,action="show")
-#input("Press Enter to continue...") # input para continuar con el programa cuando usuario presione Enter cuando desee
+input("Press Enter to continue...") # input para continuar con el programa cuando usuario presione Enter cuando desee
 ref2=myImagePreprocessor(parasitized,reference2,action="save")
 ref2_show=myImagePreprocessor(parasitized,reference2,action="show")
-#input("Press Enter to continue...") # input para continuar con el programa cuando usuario presione Enter cuando desee
+input("Press Enter to continue...") # input para continuar con el programa cuando usuario presione Enter cuando desee
 ref3=myImagePreprocessor(parasitized,reference3,action="save")
 ref3_show=myImagePreprocessor(parasitized,reference3,action="show")
-#input("Press Enter to continue...") # input para continuar con el programa cuando usuario presione Enter cuando desee
+input("Press Enter to continue...") # input para continuar con el programa cuando usuario presione Enter cuando desee
 mejor_especif=myImagePreprocessor(parasitized,reference2,action="save")
 mejor_especif_show=myImagePreprocessor(uninfected,reference2,action="show")
